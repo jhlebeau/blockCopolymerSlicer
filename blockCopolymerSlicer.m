@@ -2,6 +2,8 @@
 %please read through the program to get a better understanding of what each
 %function does and the overall capabilites of the program.
 
+% Version 1.0.0 (July 24, 2023)
+
 
 function blockCopolymerSlicer
 % This is equivalent to a main() or runner() function, the code in this
