@@ -2,7 +2,7 @@
 %please read through the program to get a better understanding of what each
 %function does and the overall capabilites of the program.
 
-% Version 1.0.0 (July 24, 2023)
+% Version 1.0.1 (July 28, 2023)
 
 
 function blockCopolymerSlicer
@@ -26,7 +26,7 @@ function blockCopolymerSlicer
     %way through a unit cell (depth = 0.25). The minority networks are 
     % white and the majority network is black (invertColor = false).
 
-    plotSliceColorNetworks(1,1,1,0.42,5,0.55,'dd',MINORITY_BLOCK_COLOR_1,MINORITY_BLOCK_COLOR_2,MAJORITY_BLOCK_COLOR);
+    plotSliceColorNetworks(1,1,1,0.42,5,0.55,'DD',MINORITY_BLOCK_COLOR_1,MINORITY_BLOCK_COLOR_2,MAJORITY_BLOCK_COLOR);
     %This plots a slice of the double diamond network on the (111) plane.
     %The volume fraction of the minority network is 0.42, five unit cells
     %are plotted in the x and y directions, and the slice occurs near the
@@ -98,150 +98,8 @@ function [MIN_BLOCK_VOL_FRAC, SLICES, SLICE_DEPTH, NUM_CELLS, INVERT_COLOR, ...
 end
 
 
-function type = interpretNetworkType(networkType)
-% THIS FUNCTION SHOULD NOT BE CALLED DIRECTLY
-% This function interprets the network type input by the user. It could 
-% be modified to accept more phrases.
-% Inputs:
-% networkType - A string that identifies the network type to be sliced
-% Outputs:
-% type - A string that identifies the network type to be sliced using only
-% 'diamond' or 'gyroid' so that the program can interpret this later on
-
-    inputType = lower(networkType);
-    
-    if strcmp(inputType,'diamond') || strcmp(inputType,'double diamond') || strcmp(inputType,'dd')
-
-        type = 'diamond';
-
-    elseif strcmp(inputType,'gyroid') || strcmp(inputType,'double gyroid') || strcmp(inputType,'dg')
-
-        type = 'gyroid';
-
-    else
-
-        error("Network type could not be recongized. For double diamond, the program " + ...
-            "recognizes: diamond, double diamond, and dd. For double gyroid, the program " + ...
-            "recognizes: gyroid, double gyroid, and dg. It is not case sensitive.");
-
-    end
-
-
-end
-
-
-function t = calculateT(minBlockVolFrac,type)
-% THIS FUNCTION SHOULD NOT BE CALLED DIRECTLY
-% This function converts the user input minority block volume fraction 
-% into a constant to be used in the level set equations.
-% Inputs:
-% minBlockVolFrac - The volume fraction of the minority block
-% type - A string that identifies the network type to be sliced, either
-% 'diamond' or 'gyroid'.
-% Outputs:
-% t - A constant that is used in the level set equation to produce a plot.
-
-    if minBlockVolFrac > 0.5 || minBlockVolFrac < 0
-
-        error("The minority block volume fraction must be between 0 and 0.5, although values " + ...
-            "should be in the range 0.33 to 0.42, which is where the double diamond and " + ...
-            "double gyroid typically occur.")
-
-    elseif minBlockVolFrac > 0.45 || minBlockVolFrac < 0.3
-
-        warning("It is recommended that the minority block volume fraction is between " + ...
-            "0.33 and 0.42, which is where the double diamond and double gyroid typically occur.")
-
-    end
-
-
-    if strcmp(type,'diamond')
-
-        if minBlockVolFrac < 0.11
-
-            warning("This simulation produces inaccurate results for the " + ...
-                "double diamond network if the minority block volume fraction" + ...
-            " is set below 0.11. It is recommended that the minority " + ...
-            "block volume fraction is between 0.33 and 0.42, which is " + ...
-            "where the double diamond and double gyroid typically occur.")
-
-        end
-
-        t = -1.1784*minBlockVolFrac + 1.1971;
-
-    else 
-
-        t = -1.4355*minBlockVolFrac + 1.4888;
-
-    end
-
-end
-
-
-function [uHat,vHat,wHat] = rotate001toNewAxis(newAxis)
-% THIS FUNCTION SHOULD NOT BE CALLED DIRECTLY
-% This function rotates the coordinate system such that the 3D slicing 
-% plane can be properly displayed in 2D without distortion.
-% Inputs:
-% newAxis - The normal vector to the plane that is being sliced, given as a
-% vertical 3x1 vector.
-% Outputs:
-% uHat - This is the modified x axis, x', in the new coordinate system.
-% vHat - This is the modified y axis, y', in the new coordinate system.
-% wHat - This is the modified z axis, z', in the new coordinate system.
-
-    if newAxis == [0;0;0]
-
-        error("(000) is Not a Valid Direction, Please Use a Non-zero Value.");
-
-    elseif newAxis(1) == 0 && newAxis(2) == 0 
-
-        uHat = [1;0;0];
-        vHat = [0;1;0];
-        wHat = [0;0;1];
-
-    else
-
-        n = [0;0;1];
-        normN = norm(n);
-        nHat = n/normN;
-    
-        k = newAxis;
-        normK = norm(k);
-        kHat = k/normK;
-    
-        b = cross(kHat,nHat);
-        bHat = b/norm(b);
-
-        theta = acosd(dot(kHat,nHat));
-    
-        q0 = cosd(theta/2);
-        q1 = sind(theta/2)*bHat(1);
-        q2 = sind(theta/2)*bHat(2);
-        q3 = sind(theta/2)*bHat(3);
-    
-        Q = zeros(3,3);
-        Q(1,1) = -(q0*q0+q1*q1-q2*q2-q3*q3);
-        Q(1,2) = -2*(q1*q2-q0*q3);
-        Q(1,3) = -2*(q1*q3+q0*q2);
-        Q(2,1) = -2*(q1*q2+q0*q3);
-        Q(2,2) = -(q0*q0-q1*q1+q2*q2-q3*q3);
-        Q(2,3) = -2*(q2*q3-q0*q1);
-        Q(3,1) = 2*(q1*q3-q0*q2);
-        Q(3,2) = 2*(q2*q3+q0*q1);
-        Q(3,3) = q0*q0-q1*q1-q2*q2+q3*q3;
-    
-        uHat = Q*[1;0;0];
-        vHat = Q*[0;1;0];
-        wHat = Q*[0;0;1];
-    
-        % x' = (u(1)*x+u(2)*y+u(3)*z);
-        % y' = (v(1)*x+v(2)*y+v(3)*z);
-        % z' = (w(1)*x+w(2)*y+w(3)*z);
-
-    end
-
-end
+% TO USE THIS PROGRAM, YOU DO NOT NEED TO EDIT ANYTHING BEYOND THIS POINT.
+% PLEASE READ THE DESCRIPTION AND LIST OF INPUTS FOR EACH FUNCTION.
 
 
 function plotSlice(index1,index2,index3,minBlockVolFrac,cells,sliceDepth,networkType,invertColor)
@@ -1349,5 +1207,151 @@ function twoPlaneSlice(plane1Index1,plane1Index2,plane1Index3,sliceDepth1,networ
     ylim([0, cells]);
 
     hold off;
+
+end
+
+
+function type = interpretNetworkType(networkType)
+% THIS FUNCTION SHOULD NOT BE CALLED DIRECTLY
+% This function interprets the network type input by the user. It could 
+% be modified to accept more phrases.
+% Inputs:
+% networkType - A string that identifies the network type to be sliced
+% Outputs:
+% type - A string that identifies the network type to be sliced using only
+% 'diamond' or 'gyroid' so that the program can interpret this later on
+
+    inputType = lower(networkType);
+    
+    if strcmp(inputType,'diamond') || strcmp(inputType,'double diamond') || strcmp(inputType,'dd')
+
+        type = 'diamond';
+
+    elseif strcmp(inputType,'gyroid') || strcmp(inputType,'double gyroid') || strcmp(inputType,'dg')
+
+        type = 'gyroid';
+
+    else
+
+        error("Network type could not be recongized. For double diamond, the program " + ...
+            "recognizes: diamond, double diamond, and dd. For double gyroid, the program " + ...
+            "recognizes: gyroid, double gyroid, and dg. It is not case sensitive.");
+
+    end
+
+
+end
+
+
+function t = calculateT(minBlockVolFrac,type)
+% THIS FUNCTION SHOULD NOT BE CALLED DIRECTLY
+% This function converts the user input minority block volume fraction 
+% into a constant to be used in the level set equations.
+% Inputs:
+% minBlockVolFrac - The volume fraction of the minority block
+% type - A string that identifies the network type to be sliced, either
+% 'diamond' or 'gyroid'.
+% Outputs:
+% t - A constant that is used in the level set equation to produce a plot.
+
+    if minBlockVolFrac > 0.5 || minBlockVolFrac < 0
+
+        error("The minority block volume fraction must be between 0 and 0.5, although values " + ...
+            "should be in the range 0.33 to 0.42, which is where the double diamond and " + ...
+            "double gyroid typically occur.")
+
+    elseif minBlockVolFrac > 0.45 || minBlockVolFrac < 0.3
+
+        warning("It is recommended that the minority block volume fraction is between " + ...
+            "0.33 and 0.42, which is where the double diamond and double gyroid typically occur.")
+
+    end
+
+
+    if strcmp(type,'diamond')
+
+        if minBlockVolFrac < 0.11
+
+            warning("This simulation produces inaccurate results for the " + ...
+                "double diamond network if the minority block volume fraction" + ...
+            " is set below 0.11. It is recommended that the minority " + ...
+            "block volume fraction is between 0.33 and 0.42, which is " + ...
+            "where the double diamond and double gyroid typically occur.")
+
+        end
+
+        t = -1.1784*minBlockVolFrac + 1.1971;
+
+    else 
+
+        t = -1.4355*minBlockVolFrac + 1.4888;
+
+    end
+
+end
+
+
+function [uHat,vHat,wHat] = rotate001toNewAxis(newAxis)
+% THIS FUNCTION SHOULD NOT BE CALLED DIRECTLY
+% This function rotates the coordinate system such that the 3D slicing 
+% plane can be properly displayed in 2D without distortion.
+% Inputs:
+% newAxis - The normal vector to the plane that is being sliced, given as a
+% vertical 3x1 vector.
+% Outputs:
+% uHat - This is the modified x axis, x', in the new coordinate system.
+% vHat - This is the modified y axis, y', in the new coordinate system.
+% wHat - This is the modified z axis, z', in the new coordinate system.
+
+    if newAxis == [0;0;0]
+
+        error("(000) is Not a Valid Direction, Please Use a Non-zero Value.");
+
+    elseif newAxis(1) == 0 && newAxis(2) == 0 
+
+        uHat = [1;0;0];
+        vHat = [0;1;0];
+        wHat = [0;0;1];
+
+    else
+
+        n = [0;0;1];
+        normN = norm(n);
+        nHat = n/normN;
+    
+        k = newAxis;
+        normK = norm(k);
+        kHat = k/normK;
+    
+        b = cross(kHat,nHat);
+        bHat = b/norm(b);
+
+        theta = acosd(dot(kHat,nHat));
+    
+        q0 = cosd(theta/2);
+        q1 = sind(theta/2)*bHat(1);
+        q2 = sind(theta/2)*bHat(2);
+        q3 = sind(theta/2)*bHat(3);
+    
+        Q = zeros(3,3);
+        Q(1,1) = -(q0*q0+q1*q1-q2*q2-q3*q3);
+        Q(1,2) = -2*(q1*q2-q0*q3);
+        Q(1,3) = -2*(q1*q3+q0*q2);
+        Q(2,1) = -2*(q1*q2+q0*q3);
+        Q(2,2) = -(q0*q0-q1*q1+q2*q2-q3*q3);
+        Q(2,3) = -2*(q2*q3-q0*q1);
+        Q(3,1) = 2*(q1*q3-q0*q2);
+        Q(3,2) = 2*(q2*q3+q0*q1);
+        Q(3,3) = q0*q0-q1*q1-q2*q2+q3*q3;
+    
+        uHat = Q*[1;0;0];
+        vHat = Q*[0;1;0];
+        wHat = Q*[0;0;1];
+    
+        % x' = (u(1)*x+u(2)*y+u(3)*z);
+        % y' = (v(1)*x+v(2)*y+v(3)*z);
+        % z' = (w(1)*x+w(2)*y+w(3)*z);
+
+    end
 
 end
