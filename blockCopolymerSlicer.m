@@ -2,38 +2,40 @@
 %please read through the program to get a better understanding of what each
 %function does and the overall capabilites of the program.
 
-% Version 1.0.1 (July 28, 2023)
+% Please also refer to the README file in GitHub.
+
+% Version 1.0.2 (August 2nd, 2023)
 
 
-function blockCopolymerSlicer
-% This is equivalent to a main() or runner() function, the code in this
-% fuction will be executed when the program is run.
+% The code written below will be executed when the program is run.
 
-    [MIN_BLOCK_VOL_FRAC, SLICES, SLICE_DEPTH, NUM_CELLS, INVERT_COLOR, ...
-     MINORITY_BLOCK_COLOR_1, MINORITY_BLOCK_COLOR_2, ...
-     MAJORITY_BLOCK_COLOR, NETWORK_TYPE] = setup(); 
-    % Calling setup will save default values into these named variables.
-    % They can be used, but do not have to be. 
-    
-    filePath = 'C:\'; % Modify this filePath to save figures to your desired location
-    
-    %Below are two examples to show some functionality of this program. 
+[MIN_BLOCK_VOL_FRAC, SLICES, SLICE_DEPTH, NUM_CELLS, INVERT_COLOR, ...
+ MINORITY_BLOCK_COLOR_1, MINORITY_BLOCK_COLOR_2, ...
+ MAJORITY_BLOCK_COLOR, NETWORK_TYPE] = setup(); 
+% Calling setup will save default values into these named variables.
+% They can be used, but do not have to be. 
 
-    plotSlice(1,1,2,0.4,5,0.25,'double gyroid',false);
-    %This plots a slice of the double gyroid network on the (112) plane.
-    %The volume fraction of the minority network is 0.4, five unit cells
-    %are plotted in the x and y directions, and the slice occurs 1/4 of the
-    %way through a unit cell (depth = 0.25). The minority networks are 
-    % white and the majority network is black (invertColor = false).
+filePath = 'C:\'; % Modify this filePath to save figures to your desired location
 
-    plotSliceColorNetworks(1,1,1,0.42,5,0.55,'DD',MINORITY_BLOCK_COLOR_1,MINORITY_BLOCK_COLOR_2,MAJORITY_BLOCK_COLOR);
-    %This plots a slice of the double diamond network on the (111) plane.
-    %The volume fraction of the minority network is 0.42, five unit cells
-    %are plotted in the x and y directions, and the slice occurs near the
-    %center of a unit cell (depth = 0.55). The networks are colored using
-    %the default colors located in the setup() function below.   
+%Below are two examples to show some functionality of this program. 
 
-end
+plotSlice(1,1,2,0.4,5,0.25,'double gyroid',false);
+%This plots a slice of the double gyroid network on the (112) plane.
+%The volume fraction of the minority network is 0.4, five unit cells
+%are plotted in the x and y directions, and the slice occurs 1/4 of the
+%way through a unit cell (depth = 0.25). The minority networks are 
+% white and the majority network is black (invertColor = false).
+
+plotSliceColorNetworks(1,1,1,0.42,5,0.55,'DD',MINORITY_BLOCK_COLOR_1,MINORITY_BLOCK_COLOR_2,MAJORITY_BLOCK_COLOR);
+%This plots a slice of the double diamond network on the (111) plane.
+%The volume fraction of the minority network is 0.42, five unit cells
+%are plotted in the x and y directions, and the slice occurs near the
+%center of a unit cell (depth = 0.55). The networks are colored using
+%the default colors located in the setup() function below.   
+
+
+
+% ALL FUNCTIONS SHOULD BE CALLED BEFORE THIS LINE.
 
 
 function [MIN_BLOCK_VOL_FRAC, SLICES, SLICE_DEPTH, NUM_CELLS, INVERT_COLOR, ...
@@ -133,32 +135,32 @@ function plotSlice(index1,index2,index3,minBlockVolFrac,cells,sliceDepth,network
 
     end
 
-    network = interpretNetworkType(networkType);
+    network = interpretNetworkType(networkType); % Determines the network type, DG or DD.
 
-    t = calculateT(minBlockVolFrac,network);
+    t = calculateT(minBlockVolFrac,network); % Converts minBlockVolFrac to a value for t to be used in the level set equation
 
-    newAxis = [index1;index2;index3];
+    newAxis = [index1;index2;index3]; % Sets the user input plane as a vector
 
-    [u,v,w] = rotate001toNewAxis(newAxis);
+    [u,v,w] = rotate001toNewAxis(newAxis); % Rotates the coordinate system so the slicing plane is parallel to the x-y plane
 
-    range = sqrt(index1*index1+index2*index2+index3*index3);
+    range = sqrt(index1*index1+index2*index2+index3*index3); % Calculates the size of the rotated unit cell
 
-    z = sliceDepth*range;
+    z = sliceDepth*range; % Determines height of slicing plane
 
     if cells >=1
 
-        resolution = round(cells)/2000;
+        resolution = round(cells)/2000; % Sets the number of evaluation points in x and y directions
     
     else
     
-        error("Invalid Number of Cells, You Must Plot at Least One Cell.");
+        error("Invalid Number of Cells, You Must Plot at Least One Cell."); % Checks minimum number of cells
     
     end
     
-    points = 0:resolution:cells;  
-    [x,y] = meshgrid(points);  
+    points = 0:resolution:cells;  % Creates a list of points
+    [x,y] = meshgrid(points); % Creates a grid from this list of points
 
-    if strcmp(network,'diamond')
+    if strcmp(network,'diamond') % For DD, sets the level set equation and evaluates it for all x and y at a single z slicing value.
 
         value = sin(pi*(u(1)*x+u(2)*y+u(3)*z)).* ...
         sin(pi*(v(1)*x+v(2)*y+v(3)*z)).*sin(pi*(w(1)*x+w(2)*y+w(3)*z)) ...
@@ -168,7 +170,7 @@ function plotSlice(index1,index2,index3,minBlockVolFrac,cells,sliceDepth,network
         +cos(pi*(u(1)*x+u(2)*y+u(3)*z)).*cos(pi*(v(1)*x+v(2)*y+v(3)*z)) ...
         .*sin(pi*(w(1)*x+w(2)*y+w(3)*z));
 
-    else
+    else % For DG, sets the level set equation and evaluates it for all x and y at a single z slicing value.
 
         value = sin(2*pi*(u(1)*x+u(2)*y+u(3)*z)).*cos(2*pi*(v(1)*x+v(2)*y+v(3)*z)) + ...
         sin(2*pi*(v(1)*x+v(2)*y+v(3)*z)).*cos(2*pi*(w(1)*x+w(2)*y+w(3)*z))+ ...
@@ -176,8 +178,10 @@ function plotSlice(index1,index2,index3,minBlockVolFrac,cells,sliceDepth,network
 
     end
 
-    idx = double(abs(value)<t);
+    idx = double(abs(value)<t); 
+    % Sets all pixels where -t<value<t to 1 while setting other pixels to 0 to separate the two networks.
     
+    % Set up plotting window.
     figure();
     x0=100;
     y0=70;
@@ -186,9 +190,9 @@ function plotSlice(index1,index2,index3,minBlockVolFrac,cells,sliceDepth,network
     set(gcf,'position',[x0,y0,width,height])
     hold on;
     
-    pcolor(x,y,idx);
+    pcolor(x,y,idx); % Plots the simulation.
 
-    if invertColor
+    if invertColor % Chooses coloring scheme based on input.
 
         map = [[0,0,0];[1,1,1]];
 
@@ -198,10 +202,11 @@ function plotSlice(index1,index2,index3,minBlockVolFrac,cells,sliceDepth,network
 
     end
 
-    colormap(map);
+    colormap(map); % Colors plot.
     shading interp;
 
-    if strcmp(network,'diamond')
+    % Writes title.
+    if strcmp(network,'diamond') 
 
         if (~(floor(index1)==index1 && floor(index2)==index2 && floor(index3)==index3))
     
@@ -242,8 +247,8 @@ function plotSlice(index1,index2,index3,minBlockVolFrac,cells,sliceDepth,network
     end
 
     title(str);
-    xlim([0, cells]);
-    ylim([0, cells]);
+    xlim([0, cells]); % Sets axis limits.
+    ylim([0, cells]); % Sets axis limits.
 
     hold off;
 
@@ -1294,7 +1299,8 @@ end
 function [uHat,vHat,wHat] = rotate001toNewAxis(newAxis)
 % THIS FUNCTION SHOULD NOT BE CALLED DIRECTLY
 % This function rotates the coordinate system such that the 3D slicing 
-% plane can be properly displayed in 2D without distortion.
+% plane can be properly displayed in 2D without distortion. This is
+% accomplished by making the slicing plane parallel to the x-y plane.
 % Inputs:
 % newAxis - The normal vector to the plane that is being sliced, given as a
 % vertical 3x1 vector.
@@ -1303,11 +1309,11 @@ function [uHat,vHat,wHat] = rotate001toNewAxis(newAxis)
 % vHat - This is the modified y axis, y', in the new coordinate system.
 % wHat - This is the modified z axis, z', in the new coordinate system.
 
-    if newAxis == [0;0;0]
+    if newAxis == [0;0;0] % If an invalid input is used, throw an error.
 
         error("(000) is Not a Valid Direction, Please Use a Non-zero Value.");
 
-    elseif newAxis(1) == 0 && newAxis(2) == 0 
+    elseif newAxis(1) == 0 && newAxis(2) == 0  % If the slicing plane is already parallel to the x-y plane, don't change anything.
 
         uHat = [1;0;0];
         vHat = [0;1;0];
@@ -1315,24 +1321,31 @@ function [uHat,vHat,wHat] = rotate001toNewAxis(newAxis)
 
     else
 
+        % Create a unit vector in the direction of the current z axis.
         n = [0;0;1];
         normN = norm(n);
         nHat = n/normN;
-    
+
+        % Create a unit vector in the direction of the normal vector to the
+        % user input plane.
         k = newAxis;
         normK = norm(k);
         kHat = k/normK;
     
+        % Take the cross product of n and k. Normalize it.
         b = cross(kHat,nHat);
         bHat = b/norm(b);
 
+        % Calculate the angle that is half of the angle between n and k
         theta = acosd(dot(kHat,nHat));
     
+        % Populate values based on this angle and the cross product, b.
         q0 = cosd(theta/2);
         q1 = sind(theta/2)*bHat(1);
         q2 = sind(theta/2)*bHat(2);
         q3 = sind(theta/2)*bHat(3);
     
+        % Create a rotation matrix based on these values.
         Q = zeros(3,3);
         Q(1,1) = -(q0*q0+q1*q1-q2*q2-q3*q3);
         Q(1,2) = -2*(q1*q2-q0*q3);
@@ -1344,10 +1357,13 @@ function [uHat,vHat,wHat] = rotate001toNewAxis(newAxis)
         Q(3,2) = 2*(q2*q3+q0*q1);
         Q(3,3) = q0*q0-q1*q1-q2*q2+q3*q3;
     
+        % Save the new axes.
         uHat = Q*[1;0;0];
         vHat = Q*[0;1;0];
         wHat = Q*[0;0;1];
     
+        % For any equations using x, y, or z, these expressions replace
+        % those variables.
         % x' = (u(1)*x+u(2)*y+u(3)*z);
         % y' = (v(1)*x+v(2)*y+v(3)*z);
         % z' = (w(1)*x+w(2)*y+w(3)*z);
